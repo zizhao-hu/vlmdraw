@@ -8,7 +8,7 @@
 #SBATCH --mem=32G
 #SBATCH --time=01:00:00
 
-set -euo pipefail
+
 mkdir -p logs
 
 echo "🔦 Light Estimation Experiment"
@@ -16,7 +16,7 @@ echo "   Node: $(hostname)"
 echo "   GPU:  $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'N/A')"
 echo ""
 
-source ~/.bashrc
+source ~/.bashrc || true
 conda activate vlmdraw
 
 python experiments/light_estimation.py \
