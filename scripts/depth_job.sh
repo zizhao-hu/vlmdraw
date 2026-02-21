@@ -16,6 +16,7 @@ PIP=/home1/zizhaoh/.conda/envs/DREAM/bin/pip
 
 echo "============================================"
 echo "Depth Analysis: Real vs. AI-Generated"
+echo "Using AI-GenBench data"
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node:   $SLURMD_NODENAME"
 echo "GPU:    $(nvidia-smi --query-gpu=name --format=csv,noheader)"
@@ -23,33 +24,31 @@ echo "============================================"
 
 cd /project2/jessetho_1732/zizhaoh/vlmdraw
 
-# Redirect HF cache to scratch
 export HF_HOME=/scratch1/zizhaoh/.cache/huggingface
 mkdir -p $HF_HOME
 
-# Install deps
 $PIP install -q datasets matplotlib 2>/dev/null
 
-# Step 1: Download sample images (if not already present)
-if [ ! -d "data/samples/real" ] || [ ! -d "data/samples/fake" ]; then
-    echo "Downloading sample images..."
-    $PYTHON experiments/download_samples.py \
-        --output-dir data/samples \
-        --n-images 30
-fi
+# Step 1: Download AI-GenBench samples
+echo ""
+echo "=== Downloading AI-GenBench samples ==="
+$PYTHON experiments/download_samples.py \
+    --output-dir data/aigenbench \
+    --n-images 30
 
 echo ""
-echo "Real images: $(ls data/samples/real/ 2>/dev/null | wc -l)"
-echo "Fake images: $(ls data/samples/fake/ 2>/dev/null | wc -l)"
-echo ""
+echo "Real images: $(ls data/aigenbench/real/ 2>/dev/null | wc -l)"
+echo "Fake images: $(ls data/aigenbench/fake/ 2>/dev/null | wc -l)"
 
 # Step 2: Run depth analysis
+echo ""
+echo "=== Running Depth Analysis ==="
 $PYTHON experiments/depth_analysis.py \
-    --real-dir data/samples/real \
-    --fake-dir data/samples/fake \
-    --output-dir results/depth_analysis \
+    --real-dir data/aigenbench/real \
+    --fake-dir data/aigenbench/fake \
+    --output-dir results/depth_aigenbench \
     --model depth-anything/Depth-Anything-V2-Small-hf \
     --max-images 30
 
 echo ""
-echo "Done. Results in results/depth_analysis/"
+echo "Done. Results in results/depth_aigenbench/"
