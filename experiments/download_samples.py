@@ -1,90 +1,105 @@
 """
 Download sample images for the depth analysis experiment.
 
-Downloads a small set of real and AI-generated images for quick testing.
-Uses publicly available sources.
+Downloads real and AI-generated images from working HuggingFace datasets.
 
 Usage:
-    python experiments/download_samples.py --output-dir data/samples --n-images 20
+    python experiments/download_samples.py --output-dir data/samples --n-images 30
 """
 
 import argparse
-import os
 from pathlib import Path
-
-try:
-    from datasets import load_dataset
-    HAS_DATASETS = True
-except ImportError:
-    HAS_DATASETS = False
+from datasets import load_dataset
 
 
-def download_from_huggingface(output_dir: Path, n_images: int = 20):
-    """
-    Download real and fake image samples from HuggingFace datasets.
-
-    Uses publicly available AI-generated image detection datasets.
-    """
-    if not HAS_DATASETS:
-        print("❌ 'datasets' library not installed. Run: pip install datasets")
-        return
+def download_samples(output_dir: Path, n_images: int = 30):
+    """Download real and fake image samples from HuggingFace."""
 
     real_dir = output_dir / "real"
     fake_dir = output_dir / "fake"
     real_dir.mkdir(parents=True, exist_ok=True)
     fake_dir.mkdir(parents=True, exist_ok=True)
 
-    # Try to load a public real/fake dataset
-    # Option 1: Use "poloclub/diffusiondb" for AI-generated
-    # Option 2: Use a detection benchmark dataset
-    print("Downloading AI-generated images from DiffusionDB...")
-    try:
-        ds = load_dataset(
-            "poloclub/diffusiondb",
-            "2m_random_1k",
-            split="train",
-        )
-        for i, sample in enumerate(ds):
-            if i >= n_images:
-                break
-            img = sample["image"]
-            img.save(fake_dir / f"diffusiondb_{i:04d}.png")
-        print(f"  ✅ Downloaded {min(n_images, len(ds))} fake images")
-    except Exception as e:
-        print(f"  ⚠️ Could not download DiffusionDB: {e}")
+    # --- Download AI-generated images ---
+    # Use MJHQ (Midjourney HQ) or similar working dataset
+    fake_sources = [
+        ("UCSC-VLAA/Recap-DataComp-1B", "default", "train", "url"),  # fallback
+        ("fantasyfish/laion-art", "default", "train", "URL"),
+    ]
 
-    # Download real images from COCO or similar
-    print("Downloading real images from COCO subset...")
+    print("Downloading AI-generated images...")
+
+    # Try to use a Stable Diffusion output dataset
     try:
-        ds = load_dataset(
-            "detection-datasets/coco",
-            split="val",
-        )
-        for i, sample in enumerate(ds):
-            if i >= n_images:
+        # Use Gustavosta/Stable-Diffusion-Prompts with image gen
+        ds = load_dataset("Falah/Cifake_Dataset", split="train", streaming=True)
+        count = 0
+        for sample in ds:
+            if count >= n_images:
                 break
-            img = sample["image"]
-            img = img.convert("RGB")
-            img.save(real_dir / f"coco_{i:04d}.png")
-        print(f"  ✅ Downloaded {min(n_images, len(ds))} real images")
+            # This dataset has "label" column: 0=real, 1=fake
+            if sample.get("label", -1) == 1:
+                img = sample["image"]
+                if img.mode != "RGB":
+                    img = img.convert("RGB")
+                img.save(fake_dir / f"fake_{count:04d}.png")
+                count += 1
+                if count % 10 == 0:
+                    print(f"  Downloaded {count} fake images...")
+        print(f"  ✅ Downloaded {count} fake images from Cifake")
     except Exception as e:
-        print(f"  ⚠️ Could not download COCO: {e}")
-        print("  Trying alternative source...")
+        print(f"  ⚠️ Cifake failed: {e}")
+        print("  Trying alternative: AI-generated art dataset...")
+        try:
+            ds = load_dataset("daspartho/stable-diffusion-prompts", split="train")
+            # This is text-only, won't work. Try another.
+            raise Exception("Text-only dataset")
+        except:
+            pass
+
+        # Fallback: Use images from a working AI image dataset
         try:
             ds = load_dataset(
-                "jmhessel/newyorker_caption_contest",
-                "explanation",
-                split="validation",
+                "ChristophSchuhmann/improved_aesthetics_6.5plus",
+                split="train",
+                streaming=True,
             )
-            for i, sample in enumerate(ds):
-                if i >= n_images:
+            count = 0
+            for sample in ds:
+                if count >= n_images:
+                    break
+                try:
+                    img = sample["image"]
+                    if img.mode != "RGB":
+                        img = img.convert("RGB")
+                    img.save(fake_dir / f"fake_{count:04d}.png")
+                    count += 1
+                except:
+                    continue
+            print(f"  ✅ Downloaded {count} images from aesthetics dataset")
+        except Exception as e2:
+            print(f"  ❌ All fake image sources failed: {e2}")
+
+    # --- Download real images (COCO) ---
+    n_existing_real = len(list(real_dir.glob("*.png")))
+    if n_existing_real >= n_images:
+        print(f"Already have {n_existing_real} real images, skipping download.")
+    else:
+        print("Downloading real images from COCO...")
+        try:
+            ds = load_dataset("detection-datasets/coco", split="val")
+            count = 0
+            for sample in ds:
+                if count >= n_images:
                     break
                 img = sample["image"]
-                img = img.convert("RGB")
-                img.save(real_dir / f"real_{i:04d}.png")
-            print(f"  ✅ Downloaded {min(n_images, len(ds))} real images")
-        except Exception as e2:
-            print(f"  ❌ Could not download alternative: {e2}")
+                if img.mode != "RGB":
+                    img = img.convert("RGB")
+                img.save(real_dir / f"coco_{count:04d}.png")
+                count += 1
+            print(f"  ✅ Downloaded {count} real images from COCO")
+        except Exception as e:
+            print(f"  ❌ COCO download failed: {e}")
 
     # Summary
     n_real = len(list(real_dir.glob("*.png")))
@@ -97,11 +112,10 @@ def download_from_huggingface(output_dir: Path, n_images: int = 20):
 def main():
     parser = argparse.ArgumentParser(description="Download sample real/fake images")
     parser.add_argument("--output-dir", type=str, default="data/samples", help="Output directory")
-    parser.add_argument("--n-images", type=int, default=20, help="Number of images per category")
+    parser.add_argument("--n-images", type=int, default=30, help="Number of images per category")
     args = parser.parse_args()
 
-    output_dir = Path(args.output_dir)
-    download_from_huggingface(output_dir, args.n_images)
+    download_samples(Path(args.output_dir), args.n_images)
 
 
 if __name__ == "__main__":
