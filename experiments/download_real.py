@@ -1,19 +1,24 @@
-"""Download real images from tiny-imagenet for light estimation."""
-from datasets import load_dataset
+"""Download real images using urllib (no HF datasets dependency)."""
 import os
+import urllib.request
+import json
 
-os.makedirs("data/aigenbench/real", exist_ok=True)
-ds = load_dataset("zh-plus/tiny-imagenet", split="valid", streaming=True)
-count = 0
-for sample in ds:
-    if count >= 30:
-        break
-    img = sample["image"]
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-    img = img.resize((512, 512))
-    img.save(f"data/aigenbench/real/real_{count:04d}.png")
-    count += 1
-    if count % 10 == 0:
-        print(f"Downloaded {count}/30")
-print(f"Done: {count} real images")
+real_dir = "data/aigenbench/real"
+os.makedirs(real_dir, exist_ok=True)
+
+# Use picsum.photos for diverse real photographs
+print("Downloading 30 real photographs...")
+for i in range(30):
+    url = f"https://picsum.photos/seed/{i+100}/512/512"
+    path = os.path.join(real_dir, f"real_{i:04d}.jpg")
+    if os.path.exists(path):
+        continue
+    try:
+        urllib.request.urlretrieve(url, path)
+        if (i + 1) % 10 == 0:
+            print(f"  Downloaded {i+1}/30")
+    except Exception as e:
+        print(f"  Failed {i}: {e}")
+
+n = len([f for f in os.listdir(real_dir) if f.endswith(('.jpg', '.png'))])
+print(f"Done: {n} real images in {real_dir}")
