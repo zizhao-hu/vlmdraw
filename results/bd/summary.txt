@@ -1,0 +1,12 @@
+pearson_r | R=0.051 | F=-0.034 | D=-0.0851
+spearman_r | R=0.0341 | F=-0.0206 | D=-0.0547
+grad_magnitude_correlation | R=0.2184 | F=0.2741 | D=0.0557
+grad_direction_consistency | R=0.0569 | F=0.0692 | D=0.0123
+mutual_information | R=0.6056 | F=0.6117 | D=0.0061
+joint_entropy | R=6.0826 | F=6.1066 | D=0.024
+local_corr_mean | R=0.0205 | F=0.0142 | D=-0.0063
+local_corr_abs_mean | R=0.4394 | F=0.4852 | D=0.0458
+frac_strong_corr | R=0.4152 | F=0.4794 | D=0.0641
+brightness_range_across_depth | R=0.462 | F=0.418 | D=-0.044
+brightness_depth_slope | R=0.0071 | F=0.0001 | D=-0.007
+brightness_at_depth_edges | R=0.1036 | F=0.0783 | D=-0.0253
