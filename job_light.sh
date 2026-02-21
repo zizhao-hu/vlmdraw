@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 
 
 mkdir -p logs
@@ -20,6 +20,12 @@ source ~/.bashrc || true
 conda activate DREAM
 
 cd /project2/jessetho_1732/zizhaoh/vlmdraw
+
+# Download data if not present
+if [ ! -d "data/aigenbench/real" ]; then
+    echo "📥 Downloading AIGenBench samples..."
+    python experiments/download_samples.py --output-dir data/aigenbench --n-images 30
+fi
 
 python experiments/light_estimation.py \
     --real-dir data/aigenbench/real \
