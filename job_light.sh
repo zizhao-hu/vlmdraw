@@ -2,8 +2,8 @@
 #SBATCH --job-name=LightEst
 #SBATCH --output=logs/light_est_%j.out
 #SBATCH --error=logs/light_est_%j.err
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:a40:1
+#SBATCH --partition=nlp_hiprio
+#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=01:00:00
