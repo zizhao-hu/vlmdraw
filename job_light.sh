@@ -17,7 +17,7 @@ echo "   GPU:  $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null |
 echo ""
 
 source ~/.bashrc || true
-conda activate vlmdraw
+conda activate DREAM
 
 python experiments/light_estimation.py \
     --real-dir data/aigenbench/real \
