@@ -22,9 +22,13 @@ conda activate DREAM
 cd /project2/jessetho_1732/zizhaoh/vlmdraw
 
 # Download data if not present
-if [ ! -d "data/aigenbench/real" ]; then
+if [ ! -d "data/aigenbench/real" ] || [ -z "$(ls -A data/aigenbench/real 2>/dev/null)" ]; then
     echo "📥 Downloading AIGenBench samples..."
-    python experiments/download_samples.py --output-dir data/aigenbench --n-images 30
+    python experiments/download_real.py
+    # Fake images should already exist; if not, download them
+    if [ ! -d "data/aigenbench/fake" ] || [ -z "$(ls -A data/aigenbench/fake 2>/dev/null)" ]; then
+        python experiments/download_samples.py --output-dir data/aigenbench --n-images 30
+    fi
 fi
 
 python experiments/light_estimation.py \
