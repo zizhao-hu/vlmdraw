@@ -19,6 +19,8 @@ echo ""
 source ~/.bashrc || true
 conda activate DREAM
 
+cd /project2/jessetho_1732/zizhaoh/vlmdraw
+
 python experiments/light_estimation.py \
     --real-dir data/aigenbench/real \
     --fake-dir data/aigenbench/fake \
